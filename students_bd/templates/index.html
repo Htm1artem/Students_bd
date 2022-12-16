@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>База данных студентов</title>
+  </head>
+  <body>
+
+  <main style="display: flex; flex-direction: column; gap:10px;">
+    <div>
+      Получить все группы
+      <button id="get_groups">upload</button>
+    </div>
+
+    <div>
+      Получить всех студентов
+      <button id="get_students">upload</button>
+    </div>
+
+    <div style="display: flex; flex-direction:column; width: 200px;">
+      фильтр по студенту
+      <input id="set_student_filter" type="text">
+      <span id="student_filter_value"></span>
+    </div>
+
+    <div style="display: flex; flex-direction:column; width: 200px;">
+      фильтр по группе
+      <input id="set_group_filter" type="text">
+      <span id="group_filter_value"></span>
+    </div>
+
+    <div id="container">
+    </div>
+  </main>
+
+
+
+    <script>
+
+        let groups_btn = document.getElementById('get_groups');
+        let students_btn = document.getElementById('get_students');
+
+        let student_filter = document.getElementById('set_student_filter');
+        let group_filter = document.getElementById('set_group_filter')
+
+        let div = document.getElementById('container');
+        let student_filter_value = document.getElementById('student_filter_value');
+        let group_filter_value = document.getElementById('group_filter_value');
+
+        groups_btn.addEventListener("click", uploadGroups, false);
+        students_btn.addEventListener("click", uploadStudents, false);
+
+        student_filter.addEventListener("change", set_student_filter, false);
+        group_filter.addEventListener("change", set_group_filter, false);
+
+        function set_student_filter(event) {
+          student_filter_value.innerText = event.target.value
+          event.target.value = ''
+        }
+
+        function set_group_filter(event) {
+          group_filter_value.innerText = event.target.value
+          event.target.value = ''
+        }
+
+        function uploadGroup(group_id) {
+            div.innerHTML = ""
+            let studentHTML = ""
+            let groupHTML = ""
+
+            fetch(`http://127.0.0.1:8000/students/group/${group_id}`, {
+              method: 'GET',
+            })
+            .then((response) => {
+                return response.json();
+            })
+            .then((group) => {
+                console.log(group)
+                groupHTML += `
+                      <h1>${group.name}</h1>`
+                for (let student of group.students) {
+                    studentHTML += `
+                      <div style="background-color: #AFD2E9; padding: 10px; border-radius: 15px;margin-top: 30px;">
+                        <p>студент: ${student.name}</p>
+                        <p>пол: ${student.sex}</p>
+                        <p>возраст: ${student.age}</p>
+                      </div>`
+                }
+                div.insertAdjacentHTML('afterbegin', groupHTML+studentHTML);
+            })
+            .catch((error) => {
+                div.innerText = error;
+            });
+        }
+
+        function uploadGroups() {
+
+            div.innerHTML = ""
+            let groupHTML = ""
+
+            group_value = group_filter_value.innerText
+
+            fetch(`http://127.0.0.1:8000/students/groups?${new URLSearchParams({group: group_value})}`, {
+              method: 'GET',
+            })
+            .then((response) => {
+                return response.json();
+            })
+            .then((groups) => {
+              
+                for (let group of groups.result) {
+                    console.log(group)
+                    groupHTML += `
+                    <div style="background-color: #B1B695; border-radius: 15px; padding: 5px; margin-top: 10px;" onclick=uploadGroup(${group.id})>
+                      <h1>${group.name}</h1>
+                      <p>размер: ${group.size}</p>
+                    </div>`
+                }
+                div.insertAdjacentHTML('afterbegin', groupHTML);
+            })
+            .catch((error) => {
+                div.innerText = error;
+            });
+        }
+
+        function uploadStudents() {
+
+          div.innerHTML = ""
+          let studentsHTML = ""
+
+          student_value = student_filter_value.innerText
+
+
+          fetch(`http://127.0.0.1:8000/students/?${new URLSearchParams({student: student_value})}`, {
+            method: 'GET',
+          })
+          .then((response) => {
+              return response.json();
+          })
+          .then((students) => {
+              for (let student of students.result) {
+                  console.log(student)
+                  studentsHTML += `
+                  <div style="background-color: #AFD2E9; padding: 10px; border-radius: 15px;margin-top: 30px;">
+                      <p>студент: ${student.name}</p>
+                      <p onclick="uploadGroup(${student.group__id})"=>группа: ${student.group__name}</p>
+                      <p>пол: ${student.sex}</p>
+                      <p>возраст: ${student.age}</p>
+                  </div>`
+              }
+              div.insertAdjacentHTML('afterbegin', studentsHTML);
+          })
+          .catch((error) => {
+              div.innerText = error;
+          });
+      }
+
+    </script>
+  </body>
+</html>
